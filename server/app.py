@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from numpy import add
 from db.database import db
+from db import models
 from config import SQLALCHEMY_DATABASE_URI
 
 def create_app(db_uri):
@@ -10,8 +11,11 @@ def create_app(db_uri):
     db.init_app(app)
 
     with app.app_context():
+        print("Creating database tables...")
         db.create_all()  # Creates tables based on defined models
-
+        print("Database tables created.")
+        models.seed_initial_teams()
+        print("Initial teams seeded.")
     return app
 
 app = create_app(SQLALCHEMY_DATABASE_URI)
@@ -22,7 +26,7 @@ CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 def index():
     return "Welcome to the Player Input Service!"
 
-@app.route('/player', methods=['POST'])
+@app.route('/api/player', methods=['POST'])
 def create_player():
     
     # Check if Content-Type is application/json
@@ -35,6 +39,7 @@ def create_player():
         return jsonify({"error": "No data provided"}), 400
     
     name = data.get('name')
+    team = data.get('team')
     age = data.get('age')
     leftRating = data.get('leftRating')
     rightRating = data.get('rightRating')
@@ -42,7 +47,7 @@ def create_player():
     secondaryPosition = data.get('secondaryPosition')
     available = data.get('available')
 
-    print(f"Received: {name}, {age}, {leftRating}, {rightRating}, {primaryPosition}, {secondaryPosition}, {available}")
+    print(f"Received: {name}, {team}, {age}, {leftRating}, {rightRating}, {primaryPosition}, {secondaryPosition}, {available}")
 
     # Import the Player model
     from db.models import Player
@@ -51,6 +56,7 @@ def create_player():
         # Create a new player instance
         new_player = Player(
             name=name,
+            team=team,
             age=age,
             leftRating=leftRating,
             rightRating=rightRating,
@@ -68,7 +74,21 @@ def create_player():
         db.session.rollback()
         return jsonify({"error": str(e)}), 400
 
-@app.route('/players', methods=['GET'])
+@app.route('/api/teams', methods=['GET'])
+def get_teams():
+    from db.models import Team
+    teams = Team.query.all()
+    team_list = []
+    for team in teams:
+        team_info = {
+            "name": team.name,
+            "id": team.id
+        }
+        team_list.append(team_info)
+
+    return jsonify(team_list), 200
+
+@app.route('/api/players', methods=['GET'])
 def get_players():
     from db.models import Player
     players = Player.query.all()
@@ -76,6 +96,7 @@ def get_players():
     for player in players:
         player_info = {
             "name": player.name,
+            "team": player.team,
             "age": player.age,
             "leftRating": player.leftRating,
             "rightRating": player.rightRating,

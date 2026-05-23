@@ -1,1 +1,1 @@
-SQLALCHEMY_DATABASE_URI = 'sqlite:///roster.db'
+SQLALCHEMY_DATABASE_URI = 'sqlite:///rosters.db'

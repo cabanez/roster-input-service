@@ -1,17 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function MyForm() {
     const [formData, setFormData] = useState({
         name: '',
+        team: '',
         age: '',
         leftRating: '',
         rightRating: '',
         primaryPosition: '',
         secondaryPosition: '',
-        available: ''
+        available: true // Default to true, can be changed based on your requirements
     });
 
     const [errors, setErrors] = useState({});
+
+    const [options, setOptions] = useState([]);
+
+    useEffect(() => {
+        // Fetch from your database/API
+        const fetchOptions = async () => {
+            const response = await fetch('http://localhost:5000/api/teams');
+            const data = await response.json();
+            const mapped = data.map(item => ({
+                label: item.name,
+                value: item.id
+            }));
+            setOptions(mapped);
+        };
+        fetchOptions();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -26,16 +43,16 @@ function MyForm() {
         const newErrors = {};
 
         if (!formData.name) newErrors.name = 'Name is required';
+        if (!formData.team) newErrors.team = 'Team is required';
         if (!formData.age) newErrors.age = 'Age is required';
         if (!formData.leftRating) newErrors.leftRating = 'Left Rating is required';
         if (!formData.rightRating) newErrors.rightRating = 'Right Rating is required';
         if (!formData.primaryPosition) newErrors.primaryPosition = 'Primary Position is required';
-        if (!formData.available) newErrors.available = 'Availability is required';
 
         if (Object.keys(newErrors).length === 0) {
             console.log('Form is valid');
             try {
-                const response = await fetch('http://localhost:5000/player', {
+                const response = await fetch('http://localhost:5000/api/player', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -61,6 +78,17 @@ function MyForm() {
             <div>
                 <label>Name:</label>
                 <input type="text" name="name" value={formData.name} onChange={handleChange} required />
+            </div>
+            <div>
+                <label>Team:</label>
+                <select name="team" value={formData.team} onChange={handleChange} required>
+                    <option value="">Select a team</option>
+                    {options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
             </div>
             <div>
                 <label>Age:</label>
@@ -113,10 +141,6 @@ function MyForm() {
                     <option value="AMR">Right Winger</option>
                     <option value="ST">Striker</option>
                 </select>
-            </div>
-            <div>
-                <label>Available:</label>
-                <input type="checkbox" name="available" checked={formData.available} onChange={handleChange} required />
             </div>
             <button type="submit">Submit</button>
         </form>

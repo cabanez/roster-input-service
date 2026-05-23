@@ -7,13 +7,13 @@ function App() {
     <>
       <section id="form">
         <div>
-          <h1>Player Input Form</h1>
+          <h3>Player Input Form</h3>
           <MyForm />
         </div>
       </section>
       <section id="data">
         <div>
-          <h1>Player Table</h1>
+          <h3>Player Data</h3>
           <MyData />
         </div>
       </section>

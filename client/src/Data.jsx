@@ -6,7 +6,7 @@ function MyData() {
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
-        const response = await fetch('http://localhost:5000/players');
+        const response = await fetch('http://localhost:5000/api/players');
         if (!response.ok) {
           console.error('Failed to fetch players:', response.status, response.statusText);
           return;
@@ -20,11 +20,10 @@ function MyData() {
     };
 
     fetchPlayers();
-  });
+  }, []);
 
   return (
     <div>
-      <h2>Player Data</h2>
       <table align='center' border="1">
         <thead>
           <tr>
