@@ -90,8 +90,21 @@ def get_teams():
 
 @app.route('/api/players', methods=['GET'])
 def get_players():
+    # Import the Player model
     from db.models import Player
-    players = Player.query.all()
+
+    # Get the 'team' query parameter from the URL
+    team_name = request.args.get('team')
+
+    # Start with all players
+    query = Player.query
+
+    # Filter by team if the parameter is provided
+    if team_name:
+        query = query.filter(Player.team == team_name)
+
+    players = query.all()
+
     player_list = []
     for player in players:
         player_info = {
