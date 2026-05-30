@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-function MyData() {
+function MyData({ onEdit, refreshFlag }) {
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
@@ -20,13 +20,14 @@ function MyData() {
     };
 
     fetchPlayers();
-  }, []);
+  }, [refreshFlag]);
 
   return (
     <div>
       <table align='center' border="1">
         <thead>
           <tr>
+            <th>Edit</th>
             <th>Name</th>
             <th>Age</th>
             <th>Left Rating</th>
@@ -37,8 +38,13 @@ function MyData() {
           </tr>
         </thead>
         <tbody>
-          {players.map((player, index) => (
-            <tr key={index}>
+          {players.map((player) => (
+            <tr key={player.id ?? player.name}>
+              <td>
+                <button type="button" onClick={() => onEdit?.(player.id)}>
+                  Edit
+                </button>
+              </td>
               <td>{player.name}</td>
               <td>{player.age}</td>
               <td>{player.leftRating}</td>

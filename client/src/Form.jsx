@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function MyForm() {
+function MyForm({ initialData, onSaved }) {
     const [formData, setFormData] = useState({
         name: '',
         team: '',
@@ -12,12 +12,11 @@ function MyForm() {
         available: true // Default to true, can be changed based on your requirements
     });
 
+    const [editingId, setEditingId] = useState(null);
     const [errors, setErrors] = useState({});
-
     const [options, setOptions] = useState([]);
 
     useEffect(() => {
-        // Fetch from your database/API
         const fetchOptions = async () => {
             const response = await fetch('http://localhost:5000/api/teams');
             const data = await response.json();
@@ -29,6 +28,22 @@ function MyForm() {
         };
         fetchOptions();
     }, []);
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                name: initialData.name || '',
+                team: initialData.team || '',
+                age: initialData.age || '',
+                leftRating: initialData.leftRating || '',
+                rightRating: initialData.rightRating || '',
+                primaryPosition: initialData.primaryPosition || '',
+                secondaryPosition: initialData.secondaryPosition || '',
+                available: initialData.available ?? true
+            });
+            setEditingId(initialData.id || null);
+        }
+    }, [initialData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -52,8 +67,10 @@ function MyForm() {
         if (Object.keys(newErrors).length === 0) {
             console.log('Form is valid');
             try {
-                const response = await fetch('http://localhost:5000/api/player', {
-                    method: 'POST',
+                const url = editingId ? `http://localhost:5000/api/player/${editingId}` : 'http://localhost:5000/api/player';
+                const method = editingId ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method,
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -62,6 +79,20 @@ function MyForm() {
                 if (response.ok) {
                     const result = await response.json();
                     console.log('API call successful:', result);
+                    if (onSaved) {
+                        onSaved();
+                    }
+                    setFormData({
+                        name: '',
+                        team: '',
+                        age: '',
+                        leftRating: '',
+                        rightRating: '',
+                        primaryPosition: '',
+                        secondaryPosition: '',
+                        available: true
+                    });
+                    setEditingId(null);
                 } else {
                     console.error('API call failed:', response.status, response.statusText);
                 }
@@ -142,7 +173,7 @@ function MyForm() {
                     <option value="ST">Striker</option>
                 </select>
             </div>
-            <button type="submit">Submit</button>
+            <button type="submit">{editingId ? 'Update' : 'Submit'}</button>
         </form>
     );
 }

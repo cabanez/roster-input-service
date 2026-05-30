@@ -1,22 +1,21 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-from numpy import add
 from db.database import db
 from db import models
 from config import SQLALCHEMY_DATABASE_URI
 
 def create_app(db_uri):
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-    db.init_app(app)
+    flask_app = Flask(__name__)
+    flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+    db.init_app(flask_app)
 
-    with app.app_context():
+    with flask_app.app_context():
         print("Creating database tables...")
         db.create_all()  # Creates tables based on defined models
         print("Database tables created.")
         models.seed_initial_teams()
         print("Initial teams seeded.")
-    return app
+    return flask_app
 
 app = create_app(SQLALCHEMY_DATABASE_URI)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -25,6 +24,58 @@ CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 @app.route('/')
 def index():
     return "Welcome to the Player Input Service!"
+
+@app.route('/api/player/<int:player_id>', methods=['GET'])
+def get_player(player_id):
+    from db.models import Player
+    player = Player.query.get(player_id)
+    
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+    
+    player_info = {
+        "id": player.id,
+        "name": player.name,
+        "team": player.team,
+        "age": player.age,
+        "leftRating": player.leftRating,
+        "rightRating": player.rightRating,
+        "primaryPosition": player.primaryPosition,
+        "secondaryPosition": player.secondaryPosition,
+        "available": player.available
+    }
+    
+    return jsonify(player_info), 200
+
+@app.route('/api/player/<int:player_id>', methods=['PUT'])
+def update_player(player_id):
+    if not request.is_json:
+        return jsonify({'error': 'Unsupported Media Type, JSON expected'}), 415
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    from db.models import Player
+    player = Player.query.get(player_id)
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+
+    try:
+        player.name = data.get('name', player.name)
+        player.team = data.get('team', player.team)
+        player.age = data.get('age', player.age)
+        player.leftRating = data.get('leftRating', player.leftRating)
+        player.rightRating = data.get('rightRating', player.rightRating)
+        player.primaryPosition = data.get('primaryPosition', player.primaryPosition)
+        player.secondaryPosition = data.get('secondaryPosition', player.secondaryPosition)
+        player.available = data.get('available', player.available)
+
+        db.session.commit()
+        return jsonify({"message": f"Player {player.name} updated successfully!"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/api/player', methods=['POST'])
 def create_player():
@@ -108,6 +159,7 @@ def get_players():
     player_list = []
     for player in players:
         player_info = {
+            "id": player.id,
             "name": player.name,
             "team": player.team,
             "age": player.age,
