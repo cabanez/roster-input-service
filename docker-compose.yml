@@ -25,9 +25,13 @@ services:
       - FLASK_APP=app.py
     volumes:
       - ./server:/app
+      - roster-db:/app/instance
     networks:
       - roster-network
 
 networks:
   roster-network:
     driver: bridge
+
+volumes:
+  roster-db:
